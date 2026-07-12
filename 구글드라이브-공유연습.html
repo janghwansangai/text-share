@@ -818,18 +818,22 @@ function openMenu(anchor,items){
 }
 function closeFloatMenu(){ $('#floatMenu').hidden=true; }
 document.addEventListener('click',e=>{
+  if(e.target.closest('.shield'))return; /* 가이드 방패막 클릭으로는 메뉴를 닫지 않음 */
   if(!e.target.closest('#floatMenu')&&!e.target.closest('.role-btn')&&!e.target.closest('#gaBtn')&&!e.target.closest('#pendingRoleBtn'))
     closeFloatMenu();
 });
 
 $('#pendingRoleBtn').addEventListener('click',()=>{
+  /* 가이드 단계를 먼저 넘긴 뒤 메뉴를 만들어야 allow(오답 잠금)가 적용됨 */
+  notify('menu-opened',{type:'pending-role'});
   openMenu($('#pendingRoleBtn'),ROLES.map(r=>({
     label:r, desc:ROLE_DESC[r], checked:state.pendingRole===r,
     onPick(){ state.pendingRole=r; $('#pendingRoleLabel').textContent=r; notify('pending-role-set',{role:r}); }
   })));
-  notify('menu-opened',{type:'pending-role'});
 });
 function openRoleMenuFor(share,btn){
+  /* 가이드 단계를 먼저 넘긴 뒤 메뉴를 만들어야 allow(오답 잠금)가 적용됨 */
+  notify('menu-opened',{type:'person-role',email:share.p.email});
   const items=ROLES.map(r=>({
     label:r, desc:ROLE_DESC[r], checked:share.role===r,
     onPick(){ share.role=r; renderAccessList(); toast(`${share.p.name}님의 권한을 '${r}'(으)로 바꿨습니다.`); notify('person-role-changed',{email:share.p.email,role:r}); }
@@ -843,16 +847,16 @@ function openRoleMenuFor(share,btn){
       notify('person-removed',{email:share.p.email});
     }});
   openMenu(btn,items);
-  notify('menu-opened',{type:'person-role',email:share.p.email});
 }
 $('#gaBtn').addEventListener('click',()=>{
+  /* 가이드 단계를 먼저 넘긴 뒤 메뉴를 만들어야 allow(오답 잠금)가 적용됨 */
+  notify('menu-opened',{type:'ga'});
   openMenu($('#gaBtn'),[
     { label:'제한됨', desc:'초대한 사람만 열 수 있어요', checked:state.ga==='restricted',
       onPick(){ state.ga='restricted'; renderGA(); renderBadge(); notify('ga-set',{value:'restricted'}); } },
     { label:'링크가 있는 모든 사용자', desc:'링크를 알면 누구나 볼 수 있어요', checked:state.ga==='link',
       onPick(){ state.ga='link'; renderGA(); renderBadge(); notify('ga-set',{value:'link'}); } },
   ]);
-  notify('menu-opened',{type:'ga'});
 });
 
 /* ══════════════════ 이벤트 허브 ══════════════════ */
@@ -889,7 +893,7 @@ const GUIDE_STEPS=[
     text:'이제 지우에게 <b>어떤 권한</b>을 줄지 정할 차례야.<br>오른쪽의 <b>뷰어 ▼</b> 버튼을 눌러 봐!',
     done:(a,p)=>a==='menu-opened'&&p.type==='pending-role' },
   { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
-    target:()=>$('#floatMenu'), allow:['뷰어'],
+    target:()=>$('#floatMenu'), allow:['뷰어'], backIfGone:5,
     text:'권한은 3가지야!<br>👀 <b>뷰어</b>: 보기만 / 💬 <b>댓글 작성자</b>: 보기+댓글 / ✏️ <b>편집자</b>: 고치기까지!<br>지우는 웹툰을 구경만 하면 되니까 <b>뷰어</b>를 선택하자.',
     done:(a,p)=>a==='pending-role-set'&&p.role==='뷰어' },
   { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
@@ -910,7 +914,7 @@ const GUIDE_STEPS=[
     text:'아래쪽 <b>일반 액세스</b>를 봐. 지금은 🔒 <b>제한됨</b>이라 초대한 사람만 볼 수 있어.<br><b>제한됨 ▼</b> 버튼을 눌러 보자!',
     done:(a,p)=>a==='menu-opened'&&p.type==='ga' },
   { lesson:'1단계 · 레슨 ② 링크로 공유하기',
-    target:()=>$('#floatMenu'), allow:['링크가 있는 모든 사용자'],
+    target:()=>$('#floatMenu'), allow:['링크가 있는 모든 사용자'], backIfGone:10,
     text:'<b>링크가 있는 모든 사용자</b>를 선택해 봐!',
     done:(a,p)=>a==='ga-set'&&p.value==='link' },
   { lesson:'1단계 · 레슨 ② 링크로 공유하기',
@@ -931,7 +935,7 @@ const GUIDE_STEPS=[
     text:'마지막 레슨! 이번엔 다른 방법으로 공유 창을 열어 보자.<br>파일을 <b>마우스 오른쪽 버튼</b>으로 클릭해 봐! 🖱️',
     done:(a,p)=>a==='context-opened'&&p.id==='target' },
   { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
-    target:()=>$('#ctxShare'),
+    target:()=>$('#ctxShare'), backIfGone:15,
     text:'메뉴가 나왔지? <b>공유</b>를 눌러 봐.',
     done:a=>a==='share-opened' },
   { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
@@ -939,7 +943,7 @@ const GUIDE_STEPS=[
     text:'아까 공유한 <b>김지우</b>가 목록에 있네!<br>지우가 댓글도 달 수 있게 권한을 바꿔 보자. <b>뷰어 ▼</b> 버튼을 눌러 봐.',
     done:(a,p)=>a==='menu-opened'&&p.type==='person-role'&&p.email===P.jiwoo.email },
   { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
-    target:()=>$('#floatMenu'), allow:['댓글 작성자'],
+    target:()=>$('#floatMenu'), allow:['댓글 작성자'], backIfGone:17,
     text:'<b>댓글 작성자</b>를 선택해 봐!',
     done:(a,p)=>a==='person-role-changed'&&p.role==='댓글 작성자' },
   { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
@@ -947,7 +951,7 @@ const GUIDE_STEPS=[
     text:'권한이 바뀌었어! 👏<br>그럼 공유를 <b>취소</b>하고 싶을 땐? 같은 버튼을 다시 눌러 봐.',
     done:(a,p)=>a==='menu-opened'&&p.type==='person-role' },
   { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
-    target:()=>$('#floatMenu'), allow:['액세스 삭제'],
+    target:()=>$('#floatMenu'), allow:['액세스 삭제'], backIfGone:19,
     text:'맨 아래 <b>액세스 삭제</b>를 누르면 공유가 취소돼!',
     done:a=>a==='person-removed' },
   { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
@@ -1030,14 +1034,36 @@ function positionGuide(){
   const bb=$('#bubble'); const bw=bb.offsetWidth, bh=bb.offsetHeight;
   let bx,by;
   if(!rect){ bx=(W-bw)/2; by=(H-bh)/2.4; }
-  else{
+  else if(rect.b+14+bh<=H){          /* 1순위: 대상 아래 */
     bx=Math.min(Math.max(12,(rect.l+rect.r)/2-bw/2),W-bw-12);
-    by = rect.b+14+bh<H ? rect.b+14 : rect.t-bh-14;
-    if(by<8)by=8;
+    by=rect.b+14;
+  }else if(rect.t-bh-14>=0){         /* 2순위: 대상 위 */
+    bx=Math.min(Math.max(12,(rect.l+rect.r)/2-bw/2),W-bw-12);
+    by=rect.t-bh-14;
+  }else{                             /* 3순위: 대상 옆 (대상을 가리지 않게) */
+    if(rect.l-bw-14>=0) bx=rect.l-bw-14;
+    else if(rect.r+14+bw<=W) bx=rect.r+14;
+    else bx=Math.max(8,(W-bw)/2);
+    by=Math.min(Math.max(8,(rect.t+rect.b)/2-bh/2),H-bh-8);
   }
   bb.style.left=bx+'px'; bb.style.top=by+'px';
 }
-let posTimer=setInterval(()=>{ if(!$('#guideLayer').hidden) positionGuide(); },200);
+let posTimer=setInterval(()=>{
+  if($('#guideLayer').hidden)return;
+  if(state.phase==='guide'){
+    const st=GUIDE_STEPS[state.guideStep];
+    /* 대상 메뉴가 닫혀 사라졌으면 이전 단계로 자동 복귀 (막힘 방지) */
+    if(st&&st.backIfGone!=null&&st.target&&!targetRect(st)){
+      state.guideStep=st.backIfGone;
+      const s2=GUIDE_STEPS[state.guideStep];
+      $('#lessonLabel').textContent=s2.lesson;
+      if(s2.onEnter)s2.onEnter();
+      renderGuide();
+      return;
+    }
+  }
+  positionGuide();
+},200);
 addEventListener('resize',positionGuide);
 addEventListener('scroll',positionGuide,true);
 function positionGuideSoon(){ requestAnimationFrame(positionGuide); }

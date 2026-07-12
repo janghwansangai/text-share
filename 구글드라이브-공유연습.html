@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>구글 드라이브 공유 연습</title>
+<style>
+  /* ===== 기본 ===== */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    font-family:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    font-size:15px; color:#202124; background:#fff; overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+  input,textarea { user-select:text; -webkit-user-select:text; font-family:inherit; }
+  button { font-family:inherit; cursor:pointer; border:none; background:none; }
+  [hidden] { display:none !important; }
+
+  /* ===== 시작 화면 ===== */
+  #startScreen {
+    position:fixed; inset:0; z-index:700; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#e8f0fe 0%,#fef7e0 50%,#e6f4ea 100%);
+  }
+  .start-card {
+    background:#fff; border-radius:24px; padding:44px 48px; max-width:520px; width:92%;
+    box-shadow:0 12px 40px rgba(60,64,67,.18); text-align:center;
+  }
+  .start-card .logo { width:64px; height:56px; margin-bottom:14px; }
+  .start-card h1 { font-size:26px; margin-bottom:8px; }
+  .start-card .sub { color:#5f6368; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .start-card .safe-note {
+    background:#e6f4ea; color:#137333; border-radius:12px; padding:10px 14px;
+    font-size:13.5px; line-height:1.5; margin-bottom:22px;
+  }
+  .start-card label { display:block; text-align:left; font-size:13.5px; color:#5f6368; margin-bottom:6px; }
+  #nameInput {
+    width:100%; padding:12px 14px; font-size:16px; border:2px solid #dadce0; border-radius:10px;
+    outline:none; margin-bottom:18px;
+  }
+  #nameInput:focus { border-color:#1a73e8; }
+  #btnStart {
+    width:100%; padding:14px; font-size:17px; font-weight:700; color:#fff;
+    background:#1a73e8; border-radius:12px; transition:background .15s;
+  }
+  #btnStart:hover { background:#1765cc; }
+  .start-steps { display:flex; gap:8px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }
+  .start-steps span {
+    background:#f1f3f4; border-radius:999px; padding:6px 12px; font-size:12.5px; color:#3c4043;
+  }
+
+  /* ===== 학습 진행 바 ===== */
+  #lessonBar {
+    display:flex; align-items:center; gap:12px; padding:8px 16px;
+    background:#fff8e1; border-bottom:1px solid #f0e6c0; min-height:46px;
+  }
+  #lessonBar .stage-icon { font-size:20px; }
+  #lessonLabel { font-size:14.5px; font-weight:700; color:#7a5c00; flex:1; line-height:1.4; }
+  #hintBtn {
+    background:#fff; border:1.5px solid #f0c74a; color:#8a6d00; font-weight:700;
+    border-radius:999px; padding:6px 14px; font-size:13.5px;
+  }
+  #hintBtn:hover { background:#fff3cd; }
+  #missionDots { display:flex; gap:6px; }
+  #missionDots i {
+    width:14px; height:14px; border-radius:50%; background:#e8dcae; display:inline-block;
+    font-size:0; transition:background .2s;
+  }
+  #missionDots i.done { background:#188038; }
+  #missionDots i.now { background:#f5b400; }
+  #stageChips { display:flex; gap:6px; }
+  #stageChips span {
+    font-size:11.5px; padding:4px 10px; border-radius:999px; background:#f1f3f4; color:#80868b;
+  }
+  #stageChips span.on { background:#1a73e8; color:#fff; }
+  #stageChips span.ok { background:#188038; color:#fff; }
+
+  /* ===== 드라이브 상단바 ===== */
+  #driveApp { display:flex; flex-direction:column; height:100%; }
+  #topbar {
+    display:flex; align-items:center; gap:16px; padding:8px 16px;
+    border-bottom:1px solid #e0e3e7; background:#fff; min-height:60px;
+  }
+  .brand { display:flex; align-items:center; gap:8px; min-width:180px; }
+  .brand svg { width:36px; height:32px; }
+  .brand b { font-size:21px; font-weight:400; color:#5f6368; }
+  #searchBox {
+    flex:1; max-width:640px; display:flex; align-items:center; gap:10px;
+    background:#f0f4f9; border-radius:999px; padding:11px 18px; color:#5f6368; cursor:pointer;
+  }
+  #searchBox svg { width:18px; height:18px; fill:#5f6368; }
+  .top-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+  #avatarMe {
+    width:34px; height:34px; border-radius:50%; background:#7c4dff; color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px;
+  }
+
+  /* ===== 본문 ===== */
+  #main { flex:1; display:flex; min-height:0; background:#fff; }
+  #sidebar { width:236px; padding:8px 12px 12px; flex-shrink:0; }
+  #btnNew {
+    display:flex; align-items:center; gap:10px; background:#fff; border-radius:16px;
+    padding:14px 20px 14px 16px; font-size:15px; font-weight:600; color:#202124;
+    box-shadow:0 1px 3px rgba(60,64,67,.3),0 3px 8px rgba(60,64,67,.15); margin:6px 0 14px;
+  }
+  #btnNew:hover { background:#f8fafd; }
+  .nav-item {
+    display:flex; align-items:center; gap:12px; padding:8px 14px; border-radius:999px;
+    font-size:14px; color:#202124; cursor:pointer; margin-bottom:2px;
+  }
+  .nav-item svg { width:18px; height:18px; fill:#444746; }
+  .nav-item.on { background:#c2e7ff; font-weight:600; }
+  .nav-item:not(.on):hover { background:#f1f3f4; }
+  .storage-note { margin-top:18px; padding:0 14px; font-size:12.5px; color:#5f6368; line-height:1.5; }
+
+  #content {
+    flex:1; background:#fff; border:1px solid #e0e3e7; border-radius:16px;
+    margin:0 12px 12px 0; padding:10px 20px; overflow:auto; min-width:0;
+  }
+  #contentHead { display:flex; align-items:center; min-height:48px; gap:8px; }
+  #contentHead h2 { font-size:22px; font-weight:400; }
+  #selToolbar { display:flex; align-items:center; gap:4px; background:#e8f0fe; border-radius:999px; padding:4px 10px; }
+  #selToolbar .icon-btn { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  #selToolbar .icon-btn:hover { background:rgba(26,115,232,.12); }
+  #selToolbar .icon-btn svg { width:20px; height:20px; fill:#444746; }
+  #selCount { font-size:14px; color:#1a73e8; font-weight:600; margin:0 8px 0 2px; }
+
+  table.files { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.files th {
+    text-align:left; font-size:13px; font-weight:600; color:#5f6368;
+    border-bottom:1px solid #e0e3e7; padding:10px 8px;
+  }
+  table.files td { padding:11px 8px; border-bottom:1px solid #f1f3f4; font-size:14px; color:#3c4043; white-space:nowrap; }
+  table.files td.fname { display:flex; align-items:center; gap:12px; font-weight:500; color:#202124; }
+  table.files td.fname svg { width:22px; height:22px; flex-shrink:0; }
+  tr.filerow { cursor:pointer; }
+  tr.filerow:hover td { background:#f5f7fa; }
+  tr.filerow.sel td { background:#c2e7ff; }
+  .shared-badge { font-size:11px; color:#188038; background:#e6f4ea; border-radius:999px; padding:2px 8px; margin-left:8px; font-weight:600; }
+
+  /* ===== 컨텍스트 메뉴 & 플로팅 메뉴 ===== */
+  .menu {
+    position:fixed; z-index:300; background:#fff; border-radius:10px; min-width:230px;
+    box-shadow:0 2px 6px rgba(60,64,67,.28),0 8px 24px rgba(60,64,67,.18); padding:6px 0;
+  }
+  #floatMenu { z-index:400; }
+  .menu .mi {
+    display:flex; align-items:center; gap:12px; padding:9px 18px; font-size:14px; color:#202124; cursor:pointer;
+  }
+  .menu .mi:hover { background:#f1f3f4; }
+  .menu .mi svg { width:18px; height:18px; fill:#444746; }
+  .menu .mi.dim { color:#9aa0a6; }
+  .menu .mi.dim svg { fill:#c4c7cb; }
+  .menu .mi.danger { color:#c5221f; }
+  .menu .mi.blocked { opacity:.35; pointer-events:none; }
+  .menu .sep { height:1px; background:#e8eaed; margin:6px 0; }
+  .menu .mi .chk { width:18px; display:inline-block; color:#1a73e8; font-weight:700; }
+  .menu .mi .lbl-wrap { display:flex; flex-direction:column; }
+  .menu .mi .desc { font-size:11.5px; color:#80868b; }
+
+  /* ===== 공유 다이얼로그 ===== */
+  #shareOverlay {
+    position:fixed; inset:0; z-index:200; background:rgba(32,33,36,.45);
+    display:flex; align-items:center; justify-content:center;
+  }
+  #shareDialog {
+    background:#fff; border-radius:14px; width:512px; max-width:94vw; max-height:88vh;
+    box-shadow:0 12px 32px rgba(0,0,0,.3); padding:22px 24px 18px; overflow:auto;
+  }
+  #shTitle { font-size:20px; font-weight:500; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  #shareInputWrap {
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    border:1px solid #747775; border-radius:8px; padding:8px 10px; margin-bottom:4px;
+  }
+  #shareInputWrap:focus-within { border:2px solid #1a73e8; padding:7px 9px; }
+  #shareInput { flex:1; min-width:120px; border:none; outline:none; font-size:15px; padding:4px; background:transparent; }
+  .chip {
+    display:flex; align-items:center; gap:6px; background:#e8f0fe; border-radius:999px; padding:3px 4px 3px 3px;
+  }
+  .chip .avatar { width:24px; height:24px; font-size:11px; }
+  .chip b { font-size:13.5px; font-weight:600; color:#174ea6; }
+  .chip button { font-size:14px; color:#5f6368; width:20px; height:20px; border-radius:50%; }
+  .chip button:hover { background:#d2e3fc; }
+  .avatar {
+    width:32px; height:32px; border-radius:50%; color:#fff; display:flex; align-items:center;
+    justify-content:center; font-size:13px; font-weight:700; flex-shrink:0;
+  }
+  #sugList {
+    position:relative; border:1px solid #e0e3e7; border-radius:10px; margin-bottom:8px;
+    box-shadow:0 4px 12px rgba(60,64,67,.15); overflow:hidden;
+  }
+  .sug-item { display:flex; align-items:center; gap:12px; padding:8px 14px; cursor:pointer; }
+  .sug-item:hover { background:#f1f3f4; }
+  .sug-item .s-name { font-size:14.5px; font-weight:600; }
+  .sug-item .s-mail { font-size:12.5px; color:#5f6368; }
+
+  .sect-title { font-size:15.5px; font-weight:600; margin:18px 0 6px; }
+  .person-row { display:flex; align-items:center; gap:12px; padding:8px 2px; }
+  .person-row .p-name { font-size:14.5px; font-weight:600; }
+  .person-row .p-mail { font-size:12.5px; color:#5f6368; }
+  .person-row .grow { flex:1; }
+  .role-btn, #gaBtn, #pendingRoleBtn {
+    display:flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px;
+    font-size:13.5px; color:#3c4043; font-weight:600;
+  }
+  .role-btn:hover, #gaBtn:hover, #pendingRoleBtn:hover { background:#f1f3f4; }
+  .caret { font-size:10px; color:#5f6368; }
+  .owner-tag { font-size:13.5px; color:#5f6368; padding:7px 12px; }
+
+  #gaRow { display:flex; align-items:flex-start; gap:12px; padding:8px 2px; }
+  #gaIconWrap {
+    width:38px; height:38px; border-radius:50%; background:#e8eaed; display:flex;
+    align-items:center; justify-content:center; font-size:17px; flex-shrink:0; transition:background .2s;
+  }
+  #gaIconWrap.open { background:#c8e6c9; }
+  #gaDesc { font-size:12.5px; color:#5f6368; margin-top:2px; padding-left:12px; line-height:1.45; }
+
+  #dlgFooter, #pendingFooter { display:flex; align-items:center; margin-top:22px; }
+  .btn-outline {
+    border:1px solid #747775; color:#1a73e8; font-weight:600; border-radius:999px;
+    padding:9px 18px; font-size:14px; display:flex; align-items:center; gap:8px; background:#fff;
+  }
+  .btn-outline:hover { background:#f6fafe; }
+  .btn-fill {
+    background:#1a73e8; color:#fff; font-weight:600; border-radius:999px; padding:10px 26px; font-size:14.5px;
+  }
+  .btn-fill:hover { background:#1765cc; }
+  .btn-text { color:#1a73e8; font-weight:600; padding:10px 18px; border-radius:999px; font-size:14.5px; }
+  .btn-text:hover { background:#f1f6fd; }
+  .spacer { flex:1; }
+  #msgBox {
+    width:100%; border:1px solid #dadce0; border-radius:8px; padding:10px; font-size:14px;
+    min-height:72px; resize:none; outline:none; margin-top:10px;
+  }
+  #msgBox:focus { border-color:#1a73e8; }
+  .notify-row { display:flex; align-items:center; gap:8px; margin-top:14px; font-size:14px; }
+  #pendingTopRow { display:flex; align-items:center; justify-content:flex-end; margin-top:6px; }
+
+  /* ===== 가이드(스포트라이트/말풍선) ===== */
+  .shield { position:fixed; background:rgba(15,20,30,.55); z-index:500; }
+  #guideRing {
+    position:fixed; z-index:510; border:3px solid #f5b400; border-radius:12px; pointer-events:none;
+    box-shadow:0 0 0 4px rgba(245,180,0,.35), 0 0 18px rgba(245,180,0,.6);
+    animation:ringPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes ringPulse {
+    0%,100% { box-shadow:0 0 0 4px rgba(245,180,0,.35),0 0 18px rgba(245,180,0,.55); }
+    50% { box-shadow:0 0 0 8px rgba(245,180,0,.2),0 0 26px rgba(245,180,0,.75); }
+  }
+  #bubble {
+    position:fixed; z-index:520; width:330px; max-width:88vw; background:#fff; border-radius:16px;
+    box-shadow:0 8px 28px rgba(0,0,0,.3); padding:16px 18px; line-height:1.55; font-size:15px;
+  }
+  #bubble .mascot { font-size:26px; margin-right:6px; }
+  #bubble .b-head { display:flex; align-items:center; gap:4px; font-weight:800; color:#7a5c00; font-size:13px; margin-bottom:6px; }
+  #bubbleText { color:#202124; }
+  #bubbleText b { color:#1a73e8; }
+  #bubbleBtn {
+    margin-top:12px; background:#f5b400; color:#4a3800; font-weight:800; border-radius:999px;
+    padding:9px 22px; font-size:14.5px; display:inline-block;
+  }
+  #bubbleBtn:hover { background:#e5a800; }
+  #bubble.shake { animation:shake .35s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+
+  /* ===== 미션 성공 팝업 ===== */
+  #missionPop {
+    position:fixed; top:70px; left:50%; transform:translateX(-50%) translateY(-16px); z-index:640;
+    background:#188038; color:#fff; font-weight:800; font-size:16px; padding:13px 26px;
+    border-radius:999px; box-shadow:0 8px 22px rgba(24,128,56,.4); opacity:0; transition:all .3s;
+    pointer-events:none;
+  }
+  #missionPop.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ===== 토스트 ===== */
+  #toast {
+    position:fixed; left:24px; bottom:24px; z-index:600; background:#3c4043; color:#fff;
+    padding:13px 22px; border-radius:8px; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,.3);
+    opacity:0; transform:translateY(10px); transition:all .25s; pointer-events:none; max-width:70vw;
+  }
+  #toast.show { opacity:1; transform:translateY(0); }
+
+  /* ===== 퀴즈 ===== */
+  #quizScreen {
+    position:fixed; inset:0; z-index:700; background:linear-gradient(135deg,#e8f0fe,#fce8e6);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .quiz-card {
+    background:#fff; border-radius:22px; padding:34px 38px; width:560px; max-width:93vw;
+    box-shadow:0 12px 40px rgba(60,64,67,.2);
+  }
+  .quiz-card .q-prog { font-size:13.5px; font-weight:800; color:#1a73e8; margin-bottom:10px; }
+  .quiz-card h2 { font-size:20px; line-height:1.5; margin-bottom:20px; }
+  .q-opt {
+    display:block; width:100%; text-align:left; border:2px solid #dadce0; border-radius:12px;
+    padding:14px 16px; font-size:15.5px; margin-bottom:10px; background:#fff; transition:all .15s;
+  }
+  .q-opt:hover { border-color:#1a73e8; background:#f6fafe; }
+  .q-opt.correct { border-color:#188038; background:#e6f4ea; font-weight:700; }
+  .q-opt.wrong { border-color:#c5221f; background:#fce8e6; }
+  .q-opt:disabled { cursor:default; }
+  #quizFb { border-radius:12px; padding:13px 16px; font-size:14.5px; line-height:1.55; margin-top:6px; }
+  #quizFb.good { background:#e6f4ea; color:#137333; }
+  #quizFb.bad { background:#fce8e6; color:#a50e0e; }
+  #btnQuizNext { margin-top:16px; width:100%; padding:13px; font-size:16px; font-weight:800;
+    background:#1a73e8; color:#fff; border-radius:12px; }
+  #btnQuizNext:hover { background:#1765cc; }
+
+  /* ===== 수료증 ===== */
+  #certScreen {
+    position:fixed; inset:0; z-index:700; background:linear-gradient(135deg,#fef7e0,#e8f0fe);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px; overflow:auto; padding:20px;
+  }
+  #certCard {
+    background:#fffdf5; border:6px double #c9a227; border-radius:18px; padding:38px 46px;
+    width:600px; max-width:94vw; text-align:center; box-shadow:0 12px 40px rgba(60,64,67,.2);
+  }
+  #certCard .c-title { font-size:30px; font-weight:800; letter-spacing:12px; color:#8a6d00; margin-bottom:4px; }
+  #certCard .c-sub { font-size:13px; color:#9c8420; margin-bottom:24px; }
+  #certName { font-size:24px; font-weight:800; margin-bottom:16px; }
+  #certBody { font-size:15px; line-height:1.8; color:#3c4043; margin-bottom:18px; }
+  .cert-skills { text-align:left; display:inline-block; margin:0 auto 20px; font-size:14.5px; line-height:2; color:#137333; }
+  #certDate { font-size:14.5px; color:#5f6368; margin-bottom:4px; }
+  #certQuiz { font-size:13.5px; color:#8a6d00; font-weight:700; }
+  .cert-btns { display:flex; gap:12px; }
+  .cert-btns button { padding:12px 26px; border-radius:999px; font-size:15px; font-weight:700; }
+  #btnPrint { background:#1a73e8; color:#fff; }
+  #btnRestart { background:#fff; border:2px solid #dadce0; color:#3c4043; }
+
+  .confetti { position:fixed; top:-30px; font-size:24px; z-index:710; animation:fall linear forwards; pointer-events:none; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(360deg); opacity:.6; } }
+
+  @media (max-width:860px) {
+    #sidebar { width:70px; }
+    #sidebar .nav-item span, #btnNew span, .storage-note { display:none; }
+    #btnNew { padding:14px; }
+  }
+
+  /* ===== 인쇄(수료증만) ===== */
+  @media print {
+    body > * { display:none !important; }
+    #certScreen { display:flex !important; position:static; background:#fff; }
+    .cert-btns, .confetti { display:none !important; }
+    #certCard { box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ 시작 화면 ══════════ -->
+<div id="startScreen">
+  <div class="start-card">
+    <svg class="logo" viewBox="0 0 87.3 78" aria-hidden="true">
+      <path fill="#0066da" d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z"/>
+      <path fill="#00ac47" d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z"/>
+      <path fill="#ea4335" d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.85 11.5z"/>
+      <path fill="#00832d" d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z"/>
+      <path fill="#2684fc" d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z"/>
+      <path fill="#ffba00" d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z"/>
+    </svg>
+    <h1>구글 드라이브 공유 연습</h1>
+    <p class="sub">우리 반 웹툰 파일을 친구와 <b>공유하는 방법</b>을<br>차근차근 연습해 봐요!</p>
+    <div class="start-steps">
+      <span>① 따라하며 배우기</span><span>② 권한 퀴즈</span><span>③ 혼자서 미션</span><span>④ 수료증</span>
+    </div>
+    <div class="safe-note">🛡️ 이것은 <b>연습용 프로그램</b>이에요. 진짜 구글 드라이브가 아니라서,<br>무엇을 눌러도 실제로 공유되지 않아요. 마음껏 눌러 보세요!</div>
+    <label for="nameInput">내 이름 (수료증에 적혀요)</label>
+    <input id="nameInput" maxlength="12" placeholder="예) 김한별" autocomplete="off">
+    <button id="btnStart">연습 시작하기 🚀</button>
+  </div>
+</div>
+
+<!-- ══════════ 드라이브 화면 ══════════ -->
+<div id="driveApp" hidden>
+  <header id="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 87.3 78" aria-hidden="true">
+        <path fill="#0066da" d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z"/>
+        <path fill="#00ac47" d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z"/>
+        <path fill="#ea4335" d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.85 11.5z"/>
+        <path fill="#00832d" d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z"/>
+        <path fill="#2684fc" d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z"/>
+        <path fill="#ffba00" d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z"/>
+      </svg>
+      <b>드라이브</b>
+    </div>
+    <div id="searchBox">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14"/></svg>
+      드라이브에서 검색
+    </div>
+    <div class="top-right"><div id="avatarMe">?</div></div>
+  </header>
+
+  <div id="lessonBar">
+    <span class="stage-icon" id="stageIcon">🎯</span>
+    <span id="lessonLabel"></span>
+    <button id="hintBtn" hidden>💡 힌트</button>
+    <span id="missionDots" hidden><i></i><i></i><i></i><i></i></span>
+    <span id="stageChips">
+      <span data-ch="guide">배우기</span><span data-ch="quiz">퀴즈</span><span data-ch="mission">미션</span><span data-ch="cert">수료증</span>
+    </span>
+  </div>
+
+  <div id="main">
+    <nav id="sidebar">
+      <button id="btnNew">
+        <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#444746" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+        <span>신규</span>
+      </button>
+      <div class="nav-item on"><svg viewBox="0 0 24 24"><path d="M12 3 1 21h22zm0 4.1 6.05 10.4h-12.1z"/></svg><span>내 드라이브</span></div>
+      <div class="nav-item nav-etc"><svg viewBox="0 0 24 24"><path d="M12 1a11 11 0 1 0 11 11A11 11 0 0 0 12 1m0 20a9 9 0 1 1 9-9 9 9 0 0 1-9 9m4-13.5L9.5 9.5 8 16l6.5-2z"/></svg><span>공유 문서함</span></div>
+      <div class="nav-item nav-etc"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 8 8 8 8 0 0 0-8-8m0 14a6 6 0 1 1 6-6 6 6 0 0 1-6 6m.5-9.5h-1.5V13l3.7 2.2.8-1.2-3-1.8z"/></svg><span>최근 문서함</span></div>
+      <div class="nav-item nav-etc"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM8 9h8v10H8zm7.5-5-1-1h-5l-1 1H5v2h14V4z"/></svg><span>휴지통</span></div>
+      <p class="storage-note">15GB 중 1.2GB 사용<br>(연습용 화면이에요)</p>
+    </nav>
+
+    <section id="content">
+      <div id="contentHead">
+        <h2 id="myDriveTitle">내 드라이브</h2>
+        <div id="selToolbar" hidden>
+          <button class="icon-btn" id="btnClearSel" title="선택 해제"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+          <span id="selCount">1개 선택됨</span>
+          <button class="icon-btn" id="btnShareToolbar" title="공유">
+            <svg viewBox="0 0 24 24"><path d="M15 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3m0 2c-2 0-6 1-6 3v1h12v-1c0-2-4-3-6-3M6 10V7H4v3H1v2h3v3h2v-3h3v-2z"/></svg>
+          </button>
+          <button class="icon-btn act-nope" title="다운로드"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"/></svg></button>
+          <button class="icon-btn act-nope" title="휴지통으로 이동"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg></button>
+        </div>
+      </div>
+
+      <table class="files">
+        <thead><tr><th style="width:46%">이름</th><th>소유자</th><th>마지막 수정 날짜</th><th>파일 크기</th></tr></thead>
+        <tbody>
+          <tr class="filerow" data-id="folder1">
+            <td class="fname"><svg viewBox="0 0 24 24"><path fill="#5f6368" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8z"/></svg>웹툰 그림 원본</td>
+            <td>나</td><td>2026. 7. 2.</td><td>—</td>
+          </tr>
+          <tr class="filerow" data-id="doc1">
+            <td class="fname"><svg viewBox="0 0 24 24"><path fill="#4285f4" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 15H8v-2h5zm3-4H8v-2h8zm0-4H8V7h8z"/></svg>웹툰 기획서</td>
+            <td>나</td><td>2026. 6. 24.</td><td>—</td>
+          </tr>
+          <tr class="filerow" data-id="target" id="rowTarget">
+            <td class="fname"><svg viewBox="0 0 24 24"><path fill="#ea4335" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-3.1 13.4c-.3.3-.8.5-1.4.5h-.8v1.6H7.5V12h2c.7 0 1.2.2 1.5.5s.4.7.4 1.2c0 .8-.2 1.4-.5 1.7m4.6 1.5c-.4.4-1 .6-1.8.6h-1.6V12h1.7c.8 0 1.4.2 1.7.6.4.4.6 1 .6 1.9s-.2 2-.6 2.4m4-4h-1.9v1.1h1.7v.9h-1.7v2.1h-1.2V12h3.1z"/></svg>2-5.pdf<span class="shared-badge" id="sharedBadge" hidden></span></td>
+            <td>나</td><td>2026. 7. 10.</td><td>50.9MB</td>
+          </tr>
+          <tr class="filerow" data-id="pdf2">
+            <td class="fname"><svg viewBox="0 0 24 24"><path fill="#ea4335" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-3.1 13.4c-.3.3-.8.5-1.4.5h-.8v1.6H7.5V12h2c.7 0 1.2.2 1.5.5s.4.7.4 1.2c0 .8-.2 1.4-.5 1.7m4.6 1.5c-.4.4-1 .6-1.8.6h-1.6V12h1.7c.8 0 1.4.2 1.7.6.4.4.6 1 .6 1.9s-.2 2-.6 2.4m4-4h-1.9v1.1h1.7v.9h-1.7v2.1h-1.2V12h3.1z"/></svg>등장인물 소개.pdf</td>
+            <td>나</td><td>2026. 6. 30.</td><td>2.1MB</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>
+
+<!-- ══════════ 우클릭 메뉴 ══════════ -->
+<div id="contextMenu" class="menu" hidden>
+  <div class="mi" id="ctxShare"><svg viewBox="0 0 24 24"><path d="M15 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3m0 2c-2 0-6 1-6 3v1h12v-1c0-2-4-3-6-3M6 10V7H4v3H1v2h3v3h2v-3h3v-2z"/></svg>공유</div>
+  <div class="sep"></div>
+  <div class="mi dim ctx-nope"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"/></svg>다운로드</div>
+  <div class="mi dim ctx-nope"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75zM20.7 7a1 1 0 0 0 0-1.4L18.4 3.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.75 3.75z"/></svg>이름 바꾸기</div>
+  <div class="mi dim ctx-nope"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>휴지통으로 이동</div>
+</div>
+
+<!-- ══════════ 공유 다이얼로그 ══════════ -->
+<div id="shareOverlay" hidden>
+  <div id="shareDialog">
+    <div id="shTitle">'2-5.pdf' 공유</div>
+
+    <div id="shareInputWrap">
+      <!-- 칩 + 입력창 (JS 렌더링) -->
+      <input id="shareInput" placeholder="사용자 및 그룹 추가" autocomplete="off">
+    </div>
+    <div id="sugList" hidden></div>
+
+    <!-- 사람을 고른 뒤 보이는 영역 -->
+    <div id="pendingSection" hidden>
+      <div id="pendingTopRow"><button id="pendingRoleBtn"><span id="pendingRoleLabel">뷰어</span><span class="caret">▼</span></button></div>
+      <div class="notify-row"><input type="checkbox" id="notifyChk" checked><label for="notifyChk">이메일 알림 보내기</label></div>
+      <textarea id="msgBox" placeholder="메시지"></textarea>
+      <div id="pendingFooter">
+        <span class="spacer"></span>
+        <button class="btn-text" id="btnCancelPending">취소</button>
+        <button class="btn-fill" id="btnSend">보내기</button>
+      </div>
+    </div>
+
+    <!-- 기본 화면: 사용자 목록 + 일반 액세스 -->
+    <div id="listSection">
+      <div class="sect-title">액세스 권한이 있는 사용자</div>
+      <div id="accessList"></div>
+
+      <div class="sect-title">일반 액세스</div>
+      <div id="gaRow">
+        <div id="gaIconWrap">🔒</div>
+        <div style="flex:1">
+          <button id="gaBtn"><span id="gaLabel">제한됨</span><span class="caret">▼</span></button>
+          <div id="gaDesc">액세스 권한이 있는 사용자만 링크로 열 수 있습니다</div>
+        </div>
+      </div>
+
+      <div id="dlgFooter">
+        <button class="btn-outline" id="btnCopyLink">
+          <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#1a73e8" d="M3.9 12a3.1 3.1 0 0 1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7A3.1 3.1 0 0 1 3.9 12M8 13h8v-2H8zm9-6h-4v1.9h4a3.1 3.1 0 0 1 0 6.2h-4V17h4a5 5 0 0 0 0-10"/></svg>
+          링크 복사
+        </button>
+        <span class="spacer"></span>
+        <button class="btn-fill" id="btnDone">완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 플로팅 메뉴(권한/일반 액세스) ══════════ -->
+<div id="floatMenu" class="menu" hidden></div>
+
+<!-- ══════════ 가이드 레이어 ══════════ -->
+<div id="guideLayer" hidden>
+  <div class="shield" id="sh0"></div><div class="shield" id="sh1"></div>
+  <div class="shield" id="sh2"></div><div class="shield" id="sh3"></div>
+  <div id="guideRing"></div>
+  <div id="bubble">
+    <div class="b-head"><span class="mascot">🦉</span>도우미 부엉이</div>
+    <div id="bubbleText"></div>
+    <button id="bubbleBtn" hidden>다음</button>
+  </div>
+</div>
+
+<div id="missionPop"></div>
+<div id="toast"></div>
+
+<!-- ══════════ 퀴즈 ══════════ -->
+<div id="quizScreen" hidden>
+  <div class="quiz-card">
+    <div class="q-prog" id="quizProgress"></div>
+    <h2 id="quizQ"></h2>
+    <div id="quizOpts"></div>
+    <div id="quizFb" hidden></div>
+    <button id="btnQuizNext" hidden>다음 문제 →</button>
+  </div>
+</div>
+
+<!-- ══════════ 수료증 ══════════ -->
+<div id="certScreen" hidden>
+  <div id="certCard">
+    <div class="c-title">수 료 증</div>
+    <div class="c-sub">구글 드라이브 공유 연습 과정</div>
+    <div id="certName"></div>
+    <div id="certBody">위 학생은 구글 드라이브에서 문서를<br><b>안전하게 친구와 공유하는 방법</b>을 훌륭히 익혔음을 증명합니다.</div>
+    <div class="cert-skills">
+      ✅ 친구에게 파일 공유하기 (이메일 + 권한 정하기)<br>
+      ✅ 링크로 공유하기 &amp; 주의할 점 알기<br>
+      ✅ 뷰어 · 댓글 작성자 · 편집자 구별하기<br>
+      ✅ 권한 바꾸기와 공유 취소하기
+    </div>
+    <div id="certDate"></div>
+    <div id="certQuiz"></div>
+  </div>
+  <div class="cert-btns">
+    <button id="btnPrint">🖨️ 수료증 인쇄하기</button>
+    <button id="btnRestart">↺ 처음부터 다시</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ══════════════════ 기본 도구 ══════════════════ */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+/* 등장인물 — 전원 가상 인물, 가짜 도메인(haneul.example) */
+const PEOPLE = [
+  { name:'김지우',     email:'jiwoo@haneul.example',   color:'#7c4dff' },
+  { name:'이하준',     email:'hajun@haneul.example',   color:'#0b8043' },
+  { name:'박서연',     email:'seoyeon@haneul.example', color:'#f4511e' },
+  { name:'최민준',     email:'minjun@haneul.example',  color:'#3f51b5' },
+  { name:'정다은',     email:'daeun@haneul.example',   color:'#c2185b' },
+  { name:'담임 선생님', email:'teacher@haneul.example', color:'#00897b' },
+];
+const P = { jiwoo:PEOPLE[0], hajun:PEOPLE[1], seoyeon:PEOPLE[2] };
+const ROLES = ['뷰어','댓글 작성자','편집자'];
+const ROLE_DESC = { '뷰어':'보기만 할 수 있어요', '댓글 작성자':'보기 + 댓글을 달 수 있어요', '편집자':'내용을 고칠 수 있어요' };
+
+const state = {
+  name:'', phase:'start',          // start | guide | quiz | mission | done
+  selected:null, dialogOpen:false,
+  pending:null, pendingRole:'뷰어',
+  shares:[], ga:'restricted',
+  guideStep:-1, quizIndex:0, quizScore:0,
+  missionIndex:0,
+};
+
+/* ══════════════════ 공용 UI ══════════════════ */
+let toastTimer=null;
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2300);
+}
+function avatarEl(p,small){
+  const d=document.createElement('div'); d.className='avatar'; if(small)d.classList.add('sm');
+  d.style.background=p.color; d.textContent=p.name.replace('담임 ','')[0]; return d;
+}
+
+/* ══════════════════ 파일 선택 & 툴바 ══════════════════ */
+function renderSelection(){
+  $$('.filerow').forEach(r=>r.classList.toggle('sel', r.dataset.id===state.selected));
+  const on = !!state.selected;
+  $('#myDriveTitle').hidden = on;
+  $('#selToolbar').hidden = !on;
+}
+$$('.filerow').forEach(row=>{
+  row.addEventListener('click',()=>{
+    state.selected=row.dataset.id; renderSelection();
+    notify('file-selected',{id:row.dataset.id});
+  });
+  row.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    state.selected=row.dataset.id; renderSelection();
+    openContextMenu(e.clientX,e.clientY);
+    notify('context-opened',{id:row.dataset.id});
+  });
+});
+$('#content').addEventListener('click',e=>{
+  if(e.target.closest('.filerow')||e.target.closest('#selToolbar'))return;
+  if(state.phase==='guide')return;
+  state.selected=null; renderSelection(); closeContextMenu();
+});
+$('#btnClearSel').addEventListener('click',()=>{ state.selected=null; renderSelection(); });
+$('#btnShareToolbar').addEventListener('click',()=>tryOpenShare());
+$$('.act-nope').forEach(b=>b.addEventListener('click',()=>toast('연습 프로그램이라 이 기능은 사용할 수 없어요.')));
+$$('.nav-etc').forEach(n=>n.addEventListener('click',()=>toast("연습에서는 '내 드라이브'만 사용해요.")));
+$('#btnNew').addEventListener('click',()=>toast('연습 프로그램이라 새 파일은 만들 수 없어요.'));
+$('#searchBox').addEventListener('click',()=>toast('연습 프로그램이라 검색은 되지 않아요.'));
+document.addEventListener('contextmenu',e=>{ if(!e.target.closest('.filerow')) e.preventDefault(); });
+
+function tryOpenShare(){
+  if(state.selected!=='target'){ toast("이 연습에서는 '2-5.pdf' 파일만 공유할 수 있어요."); return; }
+  openShareDialog();
+}
+
+/* ══════════════════ 우클릭 메뉴 ══════════════════ */
+function openContextMenu(x,y){
+  const m=$('#contextMenu'); m.hidden=false;
+  const mw=m.offsetWidth, mh=m.offsetHeight;
+  m.style.left=Math.min(x,innerWidth-mw-8)+'px';
+  m.style.top =Math.min(y,innerHeight-mh-8)+'px';
+}
+function closeContextMenu(){ $('#contextMenu').hidden=true; }
+$('#ctxShare').addEventListener('click',()=>{ closeContextMenu(); tryOpenShare(); });
+$$('.ctx-nope').forEach(b=>b.addEventListener('click',()=>{ closeContextMenu(); toast('연습 프로그램이라 이 기능은 사용할 수 없어요.'); }));
+document.addEventListener('click',e=>{
+  if(e.target.closest('.shield'))return; /* 가이드 방패막 클릭으로는 메뉴를 닫지 않음 */
+  if(!e.target.closest('#contextMenu')&&!e.target.closest('.filerow')) closeContextMenu();
+});
+
+/* ══════════════════ 공유 다이얼로그 ══════════════════ */
+function openShareDialog(){
+  if(state.dialogOpen)return;
+  state.dialogOpen=true; state.pending=null; state.pendingRole='뷰어';
+  $('#shareInput').value=''; $('#msgBox').value='';
+  renderShareDialog();
+  $('#shareOverlay').hidden=false;
+  notify('share-opened',{});
+}
+function closeShareDialog(){
+  state.dialogOpen=false; state.pending=null;
+  $('#shareOverlay').hidden=true; closeFloatMenu(); renderBadge();
+  notify('dialog-closed',{});
+}
+function renderShareDialog(){
+  /* 칩 */
+  const wrap=$('#shareInputWrap');
+  wrap.querySelectorAll('.chip').forEach(c=>c.remove());
+  const inp=$('#shareInput');
+  if(state.pending){
+    const chip=document.createElement('div'); chip.className='chip';
+    chip.appendChild(avatarEl(state.pending));
+    const b=document.createElement('b'); b.textContent=state.pending.name; chip.appendChild(b);
+    const x=document.createElement('button'); x.textContent='✕'; x.title='삭제';
+    x.addEventListener('click',()=>{ state.pending=null; renderShareDialog(); });
+    chip.appendChild(x);
+    wrap.insertBefore(chip,inp);
+    inp.style.display='none';
+  } else inp.style.display='';
+  /* 영역 전환 */
+  $('#pendingSection').hidden=!state.pending;
+  $('#listSection').hidden=!!state.pending;
+  $('#pendingRoleLabel').textContent=state.pendingRole;
+  renderAccessList(); renderGA(); renderSuggestions();
+}
+function renderAccessList(){
+  const list=$('#accessList'); list.textContent='';
+  /* 소유자(나) */
+  const me=document.createElement('div'); me.className='person-row';
+  const av=document.createElement('div'); av.className='avatar'; av.style.background='#7c4dff';
+  av.textContent=(state.name||'나')[0]; me.appendChild(av);
+  const info=document.createElement('div');
+  const n=document.createElement('div'); n.className='p-name'; n.textContent=(state.name||'나')+' (나)';
+  const m=document.createElement('div'); m.className='p-mail'; m.textContent='me@haneul.example';
+  info.append(n,m); me.appendChild(info);
+  const g=document.createElement('div'); g.className='grow'; me.appendChild(g);
+  const o=document.createElement('div'); o.className='owner-tag'; o.textContent='소유자'; me.appendChild(o);
+  list.appendChild(me);
+  /* 공유된 사람들 */
+  state.shares.forEach(s=>{
+    const row=document.createElement('div'); row.className='person-row';
+    row.appendChild(avatarEl(s.p));
+    const i2=document.createElement('div');
+    const n2=document.createElement('div'); n2.className='p-name'; n2.textContent=s.p.name;
+    const m2=document.createElement('div'); m2.className='p-mail'; m2.textContent=s.p.email;
+    i2.append(n2,m2); row.appendChild(i2);
+    const g2=document.createElement('div'); g2.className='grow'; row.appendChild(g2);
+    const btn=document.createElement('button'); btn.className='role-btn'; btn.dataset.email=s.p.email;
+    btn.innerHTML='<span></span><span class="caret">▼</span>';
+    btn.querySelector('span').textContent=s.role;
+    btn.addEventListener('click',()=>openRoleMenuFor(s,btn));
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+}
+function renderGA(){
+  const link = state.ga==='link';
+  $('#gaLabel').textContent = link?'링크가 있는 모든 사용자':'제한됨';
+  $('#gaDesc').textContent = link
+    ? '링크가 있는 인터넷의 모든 사용자가 볼 수 있습니다'
+    : '액세스 권한이 있는 사용자만 링크로 열 수 있습니다';
+  $('#gaIconWrap').textContent = link?'🌐':'🔒';
+  $('#gaIconWrap').classList.toggle('open',link);
+}
+function renderBadge(){
+  const b=$('#sharedBadge');
+  const n=state.shares.length;
+  if(n>0||state.ga==='link'){
+    b.hidden=false;
+    b.textContent = n>0 ? `공유됨 · ${n}명` : '링크 공유됨';
+  } else b.hidden=true;
+}
+
+/* 자동완성 */
+$('#shareInput').addEventListener('input',renderSuggestions);
+function renderSuggestions(){
+  const list=$('#sugList');
+  const q=$('#shareInput').value.trim();
+  if(!q||state.pending){ list.hidden=true; list.textContent=''; return; }
+  const hits=PEOPLE.filter(p=>
+    (p.name.includes(q)||p.email.includes(q)) &&
+    !state.shares.some(s=>s.p.email===p.email));
+  list.textContent='';
+  if(!hits.length){ list.hidden=true; return; }
+  hits.forEach(p=>{
+    const it=document.createElement('div'); it.className='sug-item'; it.dataset.email=p.email;
+    it.appendChild(avatarEl(p));
+    const d=document.createElement('div');
+    const n=document.createElement('div'); n.className='s-name'; n.textContent=p.name;
+    const m=document.createElement('div'); m.className='s-mail'; m.textContent=p.email;
+    d.append(n,m); it.appendChild(d);
+    it.addEventListener('click',()=>{
+      state.pending=p; state.pendingRole='뷰어';
+      $('#shareInput').value=''; renderShareDialog();
+      notify('chip-added',{email:p.email});
+    });
+    list.appendChild(it);
+  });
+  list.hidden=false;
+  notify('suggestions-shown',{emails:hits.map(h=>h.email)});
+}
+
+/* 보내기 / 취소 / 완료 / 링크 복사 */
+$('#btnSend').addEventListener('click',()=>{
+  if(!state.pending)return;
+  const p=state.pending, role=state.pendingRole;
+  const ex=state.shares.find(s=>s.p.email===p.email);
+  if(ex) ex.role=role; else state.shares.push({p,role});
+  state.pending=null;
+  closeShareDialogSilently();
+  toast(`${p.name}님과 공유했습니다.`);
+  notify('share-sent',{email:p.email,role});
+});
+function closeShareDialogSilently(){ /* 보내기 후: 실제 드라이브처럼 창이 닫힘(가이드 이벤트는 share-sent만) */
+  state.dialogOpen=false; state.pending=null;
+  $('#shareOverlay').hidden=true; closeFloatMenu(); renderBadge();
+}
+$('#btnCancelPending').addEventListener('click',()=>{ state.pending=null; renderShareDialog(); });
+$('#btnDone').addEventListener('click',closeShareDialog);
+$('#btnCopyLink').addEventListener('click',()=>{
+  toast('링크가 복사되었습니다.');
+  notify('link-copied',{ga:state.ga});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&state.dialogOpen&&state.phase!=='guide') closeShareDialog();
+});
+
+/* ══════════════════ 플로팅 메뉴 ══════════════════ */
+function guideAllowList(){
+  if(state.phase!=='guide')return null;
+  const st=GUIDE_STEPS[state.guideStep];
+  return (st&&st.allow)||null;
+}
+function openMenu(anchor,items){
+  const m=$('#floatMenu'); m.textContent=''; m.hidden=false;
+  const allow=guideAllowList();
+  items.forEach(it=>{
+    if(it.sep){ const s=document.createElement('div'); s.className='sep'; m.appendChild(s); return; }
+    const d=document.createElement('div'); d.className='mi';
+    if(it.danger)d.classList.add('danger');
+    if(allow&&!allow.includes(it.label))d.classList.add('blocked');
+    const chk=document.createElement('span'); chk.className='chk'; chk.textContent=it.checked?'✓':''; d.appendChild(chk);
+    const w=document.createElement('span'); w.className='lbl-wrap';
+    const l=document.createElement('span'); l.textContent=it.label; w.appendChild(l);
+    if(it.desc){ const ds=document.createElement('span'); ds.className='desc'; ds.textContent=it.desc; w.appendChild(ds); }
+    d.appendChild(w);
+    d.addEventListener('click',()=>{ closeFloatMenu(); it.onPick(); });
+    m.appendChild(d);
+  });
+  const r=anchor.getBoundingClientRect();
+  m.style.left=Math.min(r.left,innerWidth-m.offsetWidth-8)+'px';
+  m.style.top =Math.min(r.bottom+4,innerHeight-m.offsetHeight-8)+'px';
+}
+function closeFloatMenu(){ $('#floatMenu').hidden=true; }
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#floatMenu')&&!e.target.closest('.role-btn')&&!e.target.closest('#gaBtn')&&!e.target.closest('#pendingRoleBtn'))
+    closeFloatMenu();
+});
+
+$('#pendingRoleBtn').addEventListener('click',()=>{
+  openMenu($('#pendingRoleBtn'),ROLES.map(r=>({
+    label:r, desc:ROLE_DESC[r], checked:state.pendingRole===r,
+    onPick(){ state.pendingRole=r; $('#pendingRoleLabel').textContent=r; notify('pending-role-set',{role:r}); }
+  })));
+  notify('menu-opened',{type:'pending-role'});
+});
+function openRoleMenuFor(share,btn){
+  const items=ROLES.map(r=>({
+    label:r, desc:ROLE_DESC[r], checked:share.role===r,
+    onPick(){ share.role=r; renderAccessList(); toast(`${share.p.name}님의 권한을 '${r}'(으)로 바꿨습니다.`); notify('person-role-changed',{email:share.p.email,role:r}); }
+  }));
+  items.push({sep:true});
+  items.push({ label:'액세스 삭제', danger:true,
+    onPick(){
+      state.shares=state.shares.filter(s=>s!==share);
+      renderAccessList(); renderBadge();
+      toast(`${share.p.name}님의 공유를 취소했습니다.`);
+      notify('person-removed',{email:share.p.email});
+    }});
+  openMenu(btn,items);
+  notify('menu-opened',{type:'person-role',email:share.p.email});
+}
+$('#gaBtn').addEventListener('click',()=>{
+  openMenu($('#gaBtn'),[
+    { label:'제한됨', desc:'초대한 사람만 열 수 있어요', checked:state.ga==='restricted',
+      onPick(){ state.ga='restricted'; renderGA(); renderBadge(); notify('ga-set',{value:'restricted'}); } },
+    { label:'링크가 있는 모든 사용자', desc:'링크를 알면 누구나 볼 수 있어요', checked:state.ga==='link',
+      onPick(){ state.ga='link'; renderGA(); renderBadge(); notify('ga-set',{value:'link'}); } },
+  ]);
+  notify('menu-opened',{type:'ga'});
+});
+
+/* ══════════════════ 이벤트 허브 ══════════════════ */
+function notify(action,payload){
+  if(state.phase==='guide') guideCheck(action,payload||{});
+  else if(state.phase==='mission') missionCheck(action,payload||{});
+}
+
+/* ══════════════════ 가이드 엔진 ══════════════════ */
+const GUIDE_STEPS=[
+  /* ── 레슨 ① 친구에게 공유 ── */
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    text:'안녕! 나는 <b>도우미 부엉이</b>야. 🦉<br>여기는 진짜와 똑같이 만든 <b>구글 드라이브 연습 화면</b>이야. 우리 반 웹툰 파일을 친구 <b>김지우</b>에게 공유하는 방법부터 배워 보자!',
+    next:'좋아, 시작!' },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    target:()=>$('#rowTarget'),
+    text:'이게 우리 반 웹툰 파일 <b>2-5.pdf</b>야.<br>먼저 파일을 <b>한 번 클릭</b>해서 선택해 보자!',
+    done:(a,p)=>a==='file-selected'&&p.id==='target' },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    target:()=>$('#btnShareToolbar'),
+    text:'파일을 선택하니 위에 도구들이 나타났지?<br>사람 모양(👤+)의 <b>공유 버튼</b>을 눌러 봐!',
+    done:a=>a==='share-opened' },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    target:()=>[$('#shareInputWrap')],
+    text:'공유 창이 열렸어! 여기에 친구 이름이나 이메일을 입력하면 돼.<br><b>지우</b>라고 입력해 보자. ⌨️',
+    onEnter(){ $('#shareInput').focus(); },
+    done:(a,p)=>a==='suggestions-shown'&&p.emails.includes(P.jiwoo.email) },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    target:()=>[$('#shareInputWrap'),$('#sugList')],
+    text:'<b>김지우</b> 친구를 찾았다! 이름을 클릭해서 선택하자.',
+    done:(a,p)=>a==='chip-added'&&p.email===P.jiwoo.email },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    target:()=>$('#pendingRoleBtn'),
+    text:'이제 지우에게 <b>어떤 권한</b>을 줄지 정할 차례야.<br>오른쪽의 <b>뷰어 ▼</b> 버튼을 눌러 봐!',
+    done:(a,p)=>a==='menu-opened'&&p.type==='pending-role' },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    target:()=>$('#floatMenu'), allow:['뷰어'],
+    text:'권한은 3가지야!<br>👀 <b>뷰어</b>: 보기만 / 💬 <b>댓글 작성자</b>: 보기+댓글 / ✏️ <b>편집자</b>: 고치기까지!<br>지우는 웹툰을 구경만 하면 되니까 <b>뷰어</b>를 선택하자.',
+    done:(a,p)=>a==='pending-role-set'&&p.role==='뷰어' },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    target:()=>$('#btnSend'),
+    text:'마지막으로 <b>보내기</b>를 누르면 지우에게 알림 이메일이 날아가! 📨',
+    done:a=>a==='share-sent' },
+  { lesson:'1단계 · 레슨 ① 친구에게 공유하기',
+    text:'🎉 <b>참 잘했어!</b> 김지우에게 웹툰이 공유됐어.<br>파일 이름 옆에 <b>공유됨</b> 표시가 생긴 것도 보이지?<br>이번엔 <b>링크로 공유하는 방법</b>을 배워 보자!',
+    next:'레슨 ② 시작!' },
+
+  /* ── 레슨 ② 링크 공유 ── */
+  { lesson:'1단계 · 레슨 ② 링크로 공유하기',
+    target:()=>$('#btnShareToolbar'),
+    text:'친구가 아주 많으면 한 명씩 초대하기 힘들겠지?<br>그럴 땐 <b>링크 공유</b>! 다시 <b>공유 버튼</b>을 눌러 봐.',
+    done:a=>a==='share-opened' },
+  { lesson:'1단계 · 레슨 ② 링크로 공유하기',
+    target:()=>$('#gaRow'),
+    text:'아래쪽 <b>일반 액세스</b>를 봐. 지금은 🔒 <b>제한됨</b>이라 초대한 사람만 볼 수 있어.<br><b>제한됨 ▼</b> 버튼을 눌러 보자!',
+    done:(a,p)=>a==='menu-opened'&&p.type==='ga' },
+  { lesson:'1단계 · 레슨 ② 링크로 공유하기',
+    target:()=>$('#floatMenu'), allow:['링크가 있는 모든 사용자'],
+    text:'<b>링크가 있는 모든 사용자</b>를 선택해 봐!',
+    done:(a,p)=>a==='ga-set'&&p.value==='link' },
+  { lesson:'1단계 · 레슨 ② 링크로 공유하기',
+    text:'⚠️ <b>잠깐, 중요한 약속!</b><br>이제 링크만 알면 <b>모르는 사람도</b> 내 파일을 볼 수 있어.<br>일기장처럼 <b>소중한 개인정보가 담긴 파일</b>은 절대 함부로 링크 공유하면 안 돼!',
+    next:'약속할게! 🤙' },
+  { lesson:'1단계 · 레슨 ② 링크로 공유하기',
+    target:()=>$('#btnCopyLink'),
+    text:'이제 <b>링크 복사</b>를 눌러 봐.<br>복사한 링크를 친구에게 보내면 친구가 열어 볼 수 있어!',
+    done:a=>a==='link-copied' },
+  { lesson:'1단계 · 레슨 ② 링크로 공유하기',
+    target:()=>$('#btnDone'),
+    text:'좋아! <b>완료</b>를 눌러서 창을 닫자.',
+    done:a=>a==='dialog-closed' },
+
+  /* ── 레슨 ③ 권한 변경 & 공유 취소 ── */
+  { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
+    target:()=>$('#rowTarget'),
+    text:'마지막 레슨! 이번엔 다른 방법으로 공유 창을 열어 보자.<br>파일을 <b>마우스 오른쪽 버튼</b>으로 클릭해 봐! 🖱️',
+    done:(a,p)=>a==='context-opened'&&p.id==='target' },
+  { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
+    target:()=>$('#ctxShare'),
+    text:'메뉴가 나왔지? <b>공유</b>를 눌러 봐.',
+    done:a=>a==='share-opened' },
+  { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
+    target:()=>$('#accessList .role-btn'),
+    text:'아까 공유한 <b>김지우</b>가 목록에 있네!<br>지우가 댓글도 달 수 있게 권한을 바꿔 보자. <b>뷰어 ▼</b> 버튼을 눌러 봐.',
+    done:(a,p)=>a==='menu-opened'&&p.type==='person-role'&&p.email===P.jiwoo.email },
+  { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
+    target:()=>$('#floatMenu'), allow:['댓글 작성자'],
+    text:'<b>댓글 작성자</b>를 선택해 봐!',
+    done:(a,p)=>a==='person-role-changed'&&p.role==='댓글 작성자' },
+  { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
+    target:()=>$('#accessList .role-btn'),
+    text:'권한이 바뀌었어! 👏<br>그럼 공유를 <b>취소</b>하고 싶을 땐? 같은 버튼을 다시 눌러 봐.',
+    done:(a,p)=>a==='menu-opened'&&p.type==='person-role' },
+  { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
+    target:()=>$('#floatMenu'), allow:['액세스 삭제'],
+    text:'맨 아래 <b>액세스 삭제</b>를 누르면 공유가 취소돼!',
+    done:a=>a==='person-removed' },
+  { lesson:'1단계 · 레슨 ③ 권한 바꾸기 & 공유 취소',
+    target:()=>$('#btnDone'),
+    text:'지우가 목록에서 사라졌지? 공유 취소 성공! 🙌<br><b>완료</b>를 눌러 마무리하자.',
+    done:a=>a==='dialog-closed' },
+  { lesson:'1단계 완료!',
+    text:'🎊 <b>1단계 완주!</b> 공유의 모든 기술을 배웠어.<br>이제 얼마나 잘 이해했는지 <b>퀴즈</b>로 확인해 볼까?',
+    next:'퀴즈 풀기 ✏️' },
+];
+
+function startGuide(){
+  state.phase='guide'; state.guideStep=-1;
+  setChips('guide'); nextGuideStep();
+}
+function nextGuideStep(){
+  state.guideStep++;
+  const st=GUIDE_STEPS[state.guideStep];
+  if(!st){ startQuiz(); return; }
+  $('#lessonLabel').textContent=st.lesson; $('#stageIcon').textContent='🎯';
+  if(st.onEnter)st.onEnter();
+  renderGuide();
+}
+function guideCheck(action,payload){
+  const st=GUIDE_STEPS[state.guideStep];
+  if(st&&st.done&&st.done(action,payload)) nextGuideStep();
+  else positionGuideSoon();
+}
+function renderGuide(){
+  const st=GUIDE_STEPS[state.guideStep];
+  const layer=$('#guideLayer'); layer.hidden=false;
+  $('#bubbleText').innerHTML=st.text;           /* 상수 문자열만 사용(사용자 입력 없음) */
+  const btn=$('#bubbleBtn');
+  if(st.next){ btn.hidden=false; btn.textContent=st.next; }
+  else btn.hidden=true;
+  positionGuide();
+}
+$('#bubbleBtn').addEventListener('click',()=>{
+  if(state.phase==='guide') nextGuideStep();
+  else if(state.phase==='mission'){ $('#guideLayer').hidden=true; renderMissionBar(); }
+});
+$$('.shield').forEach(s=>s.addEventListener('click',()=>{
+  const b=$('#bubble'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+}));
+
+function targetRect(st){
+  if(!st||!st.target)return null;
+  let els=st.target(); if(!els)return null;
+  els=[].concat(els).filter(Boolean).filter(e=>!e.hidden);
+  if(!els.length)return null;
+  let l=1e9,t=1e9,r=-1e9,b=-1e9,found=false;
+  els.forEach(e=>{ const c=e.getBoundingClientRect();
+    if(c.width===0&&c.height===0)return; /* 숨겨졌거나 아직 배치 전인 요소는 무시 */
+    found=true;
+    l=Math.min(l,c.left); t=Math.min(t,c.top); r=Math.max(r,c.right); b=Math.max(b,c.bottom); });
+  if(!found||r<=l||b<=t)return null;
+  return { l:l-6, t:t-6, r:r+6, b:b+6 };
+}
+function positionGuide(){
+  if($('#guideLayer').hidden)return;
+  const st=GUIDE_STEPS[state.guideStep];
+  const rect = state.phase==='guide' ? targetRect(st) : null;
+  const W=innerWidth,H=innerHeight;
+  const sh=[ $('#sh0'),$('#sh1'),$('#sh2'),$('#sh3') ];
+  const ring=$('#guideRing');
+  function place(el,x,y,w,h){ el.style.left=x+'px'; el.style.top=y+'px'; el.style.width=Math.max(0,w)+'px'; el.style.height=Math.max(0,h)+'px'; }
+  if(!rect){
+    place(sh[0],0,0,W,H); place(sh[1],0,0,0,0); place(sh[2],0,0,0,0); place(sh[3],0,0,0,0);
+    ring.style.display='none';
+  }else{
+    place(sh[0],0,0,W,rect.t);                            /* 위 */
+    place(sh[1],0,rect.t,rect.l,rect.b-rect.t);           /* 왼쪽 */
+    place(sh[2],rect.r,rect.t,W-rect.r,rect.b-rect.t);    /* 오른쪽 */
+    place(sh[3],0,rect.b,W,H-rect.b);                     /* 아래 */
+    ring.style.display='block';
+    ring.style.left=rect.l+'px'; ring.style.top=rect.t+'px';
+    ring.style.width=(rect.r-rect.l)+'px'; ring.style.height=(rect.b-rect.t)+'px';
+  }
+  /* 말풍선 위치 */
+  const bb=$('#bubble'); const bw=bb.offsetWidth, bh=bb.offsetHeight;
+  let bx,by;
+  if(!rect){ bx=(W-bw)/2; by=(H-bh)/2.4; }
+  else{
+    bx=Math.min(Math.max(12,(rect.l+rect.r)/2-bw/2),W-bw-12);
+    by = rect.b+14+bh<H ? rect.b+14 : rect.t-bh-14;
+    if(by<8)by=8;
+  }
+  bb.style.left=bx+'px'; bb.style.top=by+'px';
+}
+let posTimer=setInterval(()=>{ if(!$('#guideLayer').hidden) positionGuide(); },200);
+addEventListener('resize',positionGuide);
+addEventListener('scroll',positionGuide,true);
+function positionGuideSoon(){ requestAnimationFrame(positionGuide); }
+
+/* ══════════════════ 퀴즈 ══════════════════ */
+const QUIZ=[
+  { q:'친구가 내 웹툰을 "보기만" 할 수 있게 하려면, 어떤 권한을 주면 될까요?',
+    opts:['뷰어','댓글 작성자','편집자'], ans:0,
+    exp:'뷰어는 파일을 보기만 할 수 있는 권한이에요. 구경만 시켜 주고 싶을 때 딱!' },
+  { q:'친구가 내 웹툰을 보고 "감상 댓글"도 달 수 있게 하려면?',
+    opts:['뷰어','댓글 작성자','편집자'], ans:1,
+    exp:'댓글 작성자는 보기 + 댓글까지! 하지만 내용은 고칠 수 없어요.' },
+  { q:'모둠 친구와 함께 문서 내용을 "직접 고치며" 작업하려면 어떤 권한이 필요할까요?',
+    opts:['뷰어','댓글 작성자','편집자'], ans:2,
+    exp:'편집자는 내용을 직접 고칠 수 있어요. 정말 믿을 수 있는 사람에게만 줘야 해요!' },
+  { q:'일반 액세스를 "링크가 있는 모든 사용자"로 바꾸면 어떻게 될까요?',
+    opts:['내가 초대한 친구만 볼 수 있다','링크를 아는 사람은 누구나 볼 수 있다','아무도 볼 수 없다'], ans:1,
+    exp:'링크만 알면 모르는 사람도 볼 수 있어요! 소중한 정보가 담긴 파일은 꼭 "제한됨"으로 두세요.' },
+];
+function startQuiz(){
+  state.phase='quiz'; state.quizIndex=0; state.quizScore=0;
+  $('#guideLayer').hidden=true; setChips('quiz');
+  $('#lessonLabel').textContent='권한 개념 퀴즈'; $('#stageIcon').textContent='✏️';
+  $('#quizScreen').hidden=false; renderQuiz();
+}
+function renderQuiz(){
+  const q=QUIZ[state.quizIndex];
+  $('#quizProgress').textContent=`문제 ${state.quizIndex+1} / ${QUIZ.length}`;
+  $('#quizQ').textContent=q.q;
+  const box=$('#quizOpts'); box.textContent='';
+  $('#quizFb').hidden=true; $('#btnQuizNext').hidden=true;
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button'); b.className='q-opt'; b.textContent=`${'①②③'[i]}  ${o}`;
+    b.addEventListener('click',()=>answerQuiz(i,b));
+    box.appendChild(b);
+  });
+}
+function answerQuiz(i,btn){
+  const q=QUIZ[state.quizIndex];
+  $$('.q-opt').forEach((b,bi)=>{ b.disabled=true; if(bi===q.ans)b.classList.add('correct'); });
+  const fb=$('#quizFb'); fb.hidden=false;
+  if(i===q.ans){ state.quizScore++; fb.className='good'; fb.textContent='🎉 정답이에요! '+q.exp; }
+  else{ btn.classList.add('wrong'); fb.className='bad'; fb.textContent='아쉬워요! '+q.exp; }
+  const nx=$('#btnQuizNext'); nx.hidden=false;
+  nx.textContent = state.quizIndex<QUIZ.length-1 ? '다음 문제 →' : '2단계 미션 시작! 🚀';
+}
+$('#btnQuizNext').addEventListener('click',()=>{
+  state.quizIndex++;
+  if(state.quizIndex<QUIZ.length) renderQuiz();
+  else{ $('#quizScreen').hidden=true; startMissions(); }
+});
+
+/* ══════════════════ 미션 ══════════════════ */
+const MISSIONS=[
+  { text:"미션 1: 김지우에게 '2-5.pdf'를 ‘댓글 작성자’ 권한으로 공유하세요.",
+    hint:"파일 클릭 → 위쪽 공유 버튼 → '지우' 입력 → 이름 클릭 → 권한을 '댓글 작성자'로 바꾸고 → 보내기!",
+    check:(s)=>s.shares.some(x=>x.p.email===P.jiwoo.email&&x.role==='댓글 작성자') },
+  { text:"미션 2: 일반 액세스를 ‘링크가 있는 모든 사용자’로 바꾸고, 링크를 복사하세요.",
+    hint:"공유 창을 열고 → 아래 '일반 액세스'에서 '제한됨'을 눌러 바꾼 다음 → 왼쪽 아래 '링크 복사'!",
+    check:(s,a)=>a==='link-copied'&&s.ga==='link' },
+  { text:"미션 3: 이하준에게 ‘편집자’ 권한으로 공유하세요.",
+    hint:"공유 창에서 '하준' 입력 → 이름 클릭 → 권한을 '편집자'로 → 보내기!",
+    check:(s)=>s.shares.some(x=>x.p.email===P.hajun.email&&x.role==='편집자') },
+  { text:"미션 4: 박서연의 공유를 취소하세요. (액세스 삭제)",
+    hint:"공유 창의 사용자 목록에서 박서연의 권한 버튼(▼)을 누르고 → '액세스 삭제'!",
+    check:(s)=>!s.shares.some(x=>x.p.email===P.seoyeon.email) },
+];
+function startMissions(){
+  state.phase='mission'; state.missionIndex=0;
+  /* 미션용 초기 상태: 박서연만 미리 공유되어 있음 */
+  state.shares=[{p:P.seoyeon,role:'뷰어'}]; state.ga='restricted';
+  state.selected=null; renderSelection(); renderBadge();
+  if(state.dialogOpen)closeShareDialogSilently();
+  setChips('mission');
+  $('#hintBtn').hidden=false; $('#missionDots').hidden=false;
+  renderMissionBar();
+  /* 시작 안내 말풍선 */
+  $('#guideLayer').hidden=false;
+  $('#bubbleText').innerHTML='🚀 <b>2단계 미션 시작!</b><br>이번엔 안내 없이 <b>혼자 힘으로</b> 해 보는 거야.<br>참, 어제 <b>박서연</b>에게 미리 공유해 둔 상태야. 막히면 위의 <b>💡 힌트</b> 버튼을 눌러!';
+  const btn=$('#bubbleBtn'); btn.hidden=false; btn.textContent='미션 시작! 💪';
+  positionGuide();
+}
+function renderMissionBar(){
+  const m=MISSIONS[state.missionIndex];
+  $('#stageIcon').textContent='🚀';
+  $('#lessonLabel').textContent = m ? m.text : '모든 미션 완료!';
+  $$('#missionDots i').forEach((d,i)=>{
+    d.classList.toggle('done',i<state.missionIndex);
+    d.classList.toggle('now',i===state.missionIndex);
+  });
+}
+function missionCheck(action){
+  const m=MISSIONS[state.missionIndex];
+  if(!m)return;
+  if(m.check(state,action)){
+    state.missionIndex++;
+    renderMissionBar();
+    const pop=$('#missionPop');
+    pop.textContent=`🎉 미션 ${state.missionIndex} 성공!`;
+    pop.classList.add('show');
+    setTimeout(()=>pop.classList.remove('show'),1700);
+    if(state.missionIndex>=MISSIONS.length){
+      setTimeout(()=>{ if(state.dialogOpen)closeShareDialogSilently(); showCertificate(); },1800);
+    }
+  }
+}
+$('#hintBtn').addEventListener('click',()=>{
+  const m=MISSIONS[state.missionIndex]; if(!m)return;
+  $('#guideLayer').hidden=false;
+  $('#bubbleText').innerHTML='💡 <b>힌트!</b><br>'+m.hint;
+  const btn=$('#bubbleBtn'); btn.hidden=false; btn.textContent='알겠어!';
+  positionGuide();
+});
+
+/* ══════════════════ 수료증 ══════════════════ */
+function showCertificate(){
+  state.phase='done'; setChips('cert');
+  $('#lessonLabel').textContent='모든 과정 완료! 🎓'; $('#stageIcon').textContent='🎓';
+  $('#hintBtn').hidden=true;
+  $('#certName').textContent=state.name||'우리 반 친구';
+  $('#certDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  $('#certQuiz').textContent=`권한 퀴즈 ${QUIZ.length}문제 중 ${state.quizScore}문제 정답`;
+  $('#certScreen').hidden=false;
+  /* 축하 폭죽 */
+  const emo=['🎉','🎊','⭐','🌟','🎈','🏅'];
+  for(let i=0;i<26;i++){
+    const c=document.createElement('span'); c.className='confetti';
+    c.textContent=emo[i%emo.length];
+    c.style.left=Math.random()*100+'vw';
+    c.style.animationDuration=(2.5+Math.random()*2.5)+'s';
+    c.style.animationDelay=(Math.random()*1.2)+'s';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),6500);
+  }
+}
+$('#btnPrint').addEventListener('click',()=>window.print());
+$('#btnRestart').addEventListener('click',()=>location.reload());
+
+/* ══════════════════ 단계 칩 ══════════════════ */
+function setChips(cur){
+  const order=['guide','quiz','mission','cert'];
+  const idx=order.indexOf(cur);
+  $$('#stageChips span').forEach((c,i)=>{
+    c.classList.toggle('on',i===idx);
+    c.classList.toggle('ok',i<idx);
+  });
+}
+
+/* ══════════════════ 시작 ══════════════════ */
+function start(){
+  state.name=$('#nameInput').value.trim();
+  $('#avatarMe').textContent=(state.name||'나')[0];   /* textContent만 사용 — 입력값 안전 처리 */
+  $('#startScreen').hidden=true;
+  $('#driveApp').hidden=false;
+  startGuide();
+}
+$('#btnStart').addEventListener('click',start);
+$('#nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter')start(); });
+</script>
+</body>
+</html>
